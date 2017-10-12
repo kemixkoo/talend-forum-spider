@@ -2,10 +2,10 @@
 # -*-coding:utf-8-*-
 __author__ = 'ggu'
 
-import time
 import json
-import topics
-from categories import Category
+import time
+from forum.spider.categories import Category
+from forum.spider.topics import TopicList
 
 
 def format_data(data):
@@ -16,8 +16,8 @@ print "################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )######
 
 # categories
 category = Category()
-print format_data(category.stats)
-print format_data(category.details)
+# print format_data(category.stats)
+# print format_data(category.details)
 
 print "-------------------------------------------"
 # contents of topics
@@ -30,8 +30,8 @@ for (top_title, sub_data) in categories_list.items():
                     if key == 'path':
                         print "--------------------------------------"
                         print sub_title + "===> path:" + value
-                        topiclist = topics.TopicList(value).list
-                        print format_data(topiclist)
-
+                        topiclist = TopicList(value)
+                        # print format_data(topiclist.list)
+                        print (topicList.pages, len(topicList.list))
 
 print "################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"

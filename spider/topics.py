@@ -2,7 +2,7 @@
 __author__ = 'ggu'
 
 import re
-import frequest
+from  forum.frequest import BS4Request
 
 
 def getuser(data):
@@ -11,7 +11,7 @@ def getuser(data):
 
 class TopicList:
     def __init__(self, path):
-        bs4request = frequest.BS4Request(path)
+        bs4request = BS4Request(path)
         self.__contents = bs4request.contents
         self.url = bs4request.url
 
@@ -110,7 +110,7 @@ class TopicList:
 
 class Topic:
     def __init__(self, path):
-        bs4request = frequest.BS4Request(path)
+        bs4request = forum.frequest.BS4Request(path)
         self.__contents = bs4request.contents
         self.url = bs4request.url
 
