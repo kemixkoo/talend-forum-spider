@@ -2,7 +2,7 @@
 __author__ = 'ggu'
 
 import re
-from  forum.frequest import BS4Request
+from  forum.config import Config
 
 
 def getuser(data):
@@ -11,9 +11,9 @@ def getuser(data):
 
 class TopicList:
     def __init__(self, path):
-        bs4request = BS4Request(path)
-        self.__contents = bs4request.contents
-        self.url = bs4request.url
+        bs4 = Config().createbs4(path)
+        self.__contents = bs4.contents
+        self.url = bs4.url
 
         self.pages = self.getpages()
         self.list = self.getlist()

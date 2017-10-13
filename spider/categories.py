@@ -2,12 +2,13 @@
 __author__ = 'ggu'
 
 import re
-from  forum.frequest import BS4Request
+from forum.config import Config
 
 
 class Category:
     def __init__(self):
-        self.__contents = BS4Request().contents
+        bs4 = Config().createbs4()
+        self.__contents = bs4.contents
 
         self.stats = self.getstats()
         self.details = self.getdetails()
