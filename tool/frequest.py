@@ -10,16 +10,17 @@ urllib3.contrib.pyopenssl.inject_into_urllib3()
 
 
 class BS4Request:
-    def __init__(self, config, path=''):
-        self.url = config['url'] + path
+    def __init__(self, config):
+        self.__config = config
+        self.__http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
 
-        # print('Request URL: ' + self.url)
+    def get_contents(self, path=''):
+        full_url = self.__config['site.url'] + path
 
-        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
-        req = http.request('GET', self.url, headers=config['request.headers'], timeout=4.0)
+        req = self.__http.request('GET', full_url, headers=self.__config['site.request_headers'])
+        html_data = req.data.decode(self.__config['encoding'])
 
-        html_data = req.data.decode(config['encoding'])
-
-        self.contents = BeautifulSoup(html_data, 'html.parser')
+        contents = BeautifulSoup(html_data, 'html.parser')
 
         req.release_conn()
+        return contents

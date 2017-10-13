@@ -6,18 +6,14 @@ import json
 import time
 from forum.spider.categories import Category
 from forum.spider.topics import TopicList
-
-
-def format_data(data):
-    return json.dumps(data, indent=2)
-
+import forum.tool.utils
 
 print "################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
 
 # categories
 category = Category()
-# print format_data(category.stats)
-# print format_data(category.details)
+# print forum.tool.utils.format_data(category.stats)
+# print forum.tool.utils.format_data(category.details)
 
 print "-------------------------------------------"
 # contents of topics
@@ -31,7 +27,7 @@ for (top_title, sub_data) in categories_list.items():
                         print "--------------------------------------"
                         print sub_title + "===> path:" + value
                         topiclist = TopicList(value)
-                        # print format_data(topiclist.list)
+                        # print forum.tool.utils.format_data(topiclist.list)
                         print (topicList.pages, len(topicList.list))
 
 print "################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"

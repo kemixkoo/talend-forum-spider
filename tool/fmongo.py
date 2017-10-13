@@ -12,14 +12,14 @@ class MongoConn:
         self.__connection = pymongo.Connection(server, port)
         self.__db = self.__connection.forum
 
-    def addcategories(self, data):
+    def add_categories(self, data):
         categories = self.__db.categories
         categories.insert(data)
 
-    def addtopiclist(self, data):
+    def add_topiclist(self, data):
         topiclist = self.__db.topiclist
         topiclist.insert(data)
 
-    def addtopic(self, data):
+    def add_topic(self, data):
         topics = self.__db.topics
         topics.insert(data)

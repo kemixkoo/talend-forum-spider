@@ -1,39 +1,69 @@
 # -*-coding:utf-8-*-
 __author__ = 'ggu'
 
-from forum.tool.fmongo import MongoConn
-from forum.tool.frequest import BS4Request
+import ConfigParser
+import os
 
 
 class Config:
     def __init__(self):
-        self.config = {}
+        # load from config file
+        self.__file_config = ConfigParser.ConfigParser()
+        path = os.path.split(os.path.realpath(__file__))[0] + '/forum.conf'
+        self.__file_config.read(path)
 
-        # settings of forum site
-        self.config['encoding'] = 'utf-8'
-        self.config['url'] = 'https://www.talendforge.org/forum/'
-        self.config['request.headers'] = {
+        # custom setting
+        self.settings = {}
+
+        self.settings['encoding'] = 'utf-8'
+
+        # for site
+        # self.settings['url'] = self.__file_config.get('site', 'url')
+        self.settings['site.request_headers'] = {
             'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0'}
 
-        #settings of mongo db
-        self.config['mongo.server'] = 'localhost'
-        self.config['mongo.port'] = 27017
+        # init obj
+        self.__bs4request = None
+        self.__mongo = None
 
     def __getitem__(self, key):
-        return self.get(key)
+        value = self.get(key)
+        if value:
+            return value
+        else:
+            keys = key.split('.')
+            if len(keys) > 1:
+                return self.__file_config.get(keys[0], keys[1])
+
+        return None
 
     def get(self, key):
-        if key and key in self.config.keys():
-            return self.config[key]
+        if key and key in self.settings.keys():
+            return self.settings[key]
         else:
             return None
 
     def set(self, key, val):
-        if key and val and key in self.config.keys():
-            self.config[key] = val
+        if key and val and key in self.settings.keys():
+            self.settings[key] = val
 
-    def createmongo(self):
-        return MongoConn(self)
+    def get_bs4request(self):
+        if not self.__bs4request:
+            from forum.tool.frequest import BS4Request
+            self.__bs4request = BS4Request(self)
+        return self.__bs4request
 
-    def createbs4(self, path=''):
-        return BS4Request(self, path)
+    def get_mongo(self):
+        if not self.__mongo:
+            from forum.tool.fmongo import MongoConn
+            self.__mongo = MongoConn(self)
+        return self.__mongo
+
+    def get_category_uri(self, category_id, page=0):
+        if page > 0:
+            return 'viewforum.php?id=' + category_id + '&p=' + page
+        else:
+            return 'viewforum.php?id=' + category_id
+
+    def get_topic_uri(self, topic_id):
+        return 'viewtopic.php?id=' + topic_id

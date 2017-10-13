@@ -2,18 +2,19 @@
 __author__ = 'ggu'
 
 import re
-from forum.config import Config
+import forum.tool.utils
 
 
 class Category:
-    def __init__(self):
-        bs4 = Config().createbs4()
-        self.__contents = bs4.contents
+    def __init__(self, config):
+        self.__config = config
+        self.__contents = self.__config.get_bs4request().get_contents()
+        # self.__mongo = self.__config.get_mongo()
 
-        self.stats = self.getstats()
-        self.details = self.getdetails()
+        self.stats = self.get_stats()
+        self.details = self.get_details()
 
-    def getstats(self):
+    def get_stats(self):
         brdstats_conr = self.__contents.find('div', id='brdstats', class_='block').find('dl', class_='conr')
         brdstats_dd = brdstats_conr.findAll('dd', recursive=False)
         total_registered_users = int(brdstats_dd[0].span.strong.string.replace(',', ''))
@@ -28,12 +29,11 @@ class Category:
         results['posts'] = total_posts
         return results
 
-    def getdetails(self):
-        results = {}
+    def get_details(self):
+        results = []
 
         for blocktable in self.__contents.findAll(id=re.compile("^idx\d+$"), class_='blocktable'):
             top_title = blocktable.h2.span.string
-            results[top_title] = {}
 
             for tr in blocktable.table.findAll('tr', class_=re.compile('^row(odd|even)$')):
                 tdtc1, tdtc2, tdtc3, tdtcr = tr.findAll('td', recursive=False)
@@ -64,19 +64,38 @@ class Category:
 
                 # sub result
                 subresult = {}
-                results[top_title][sub_title] = subresult
 
+                subresult['top_title'] = top_title
+                subresult['title'] = sub_title
                 subresult['desc'] = sub_title_desc
                 subresult['path'] = sub_url
+                subresult['category_id'] = forum.tool.utils.get_id(sub_url)
                 subresult['topics'] = topics_num
                 subresult['posts'] = posts_num
                 subresult['talenders'] = talenders
                 subresult['last_modified_datatime'] = last_modified_datetime
 
+                # self.__mongo.add_categories(subresult)
+
+                results.append(subresult)
+
         return results
 
 
 if __name__ == "__main__":
-    category = Category()
+    from forum.config import Config
+    import timeit
+
+    start = timeit.default_timer()
+
+    category = Category(Config())
+
+    # print forum.tool.utils.format_data(category.stats)
+    # print "-------------------------------------"
+    # print forum.tool.utils.format_data(category.details)
+
     print category.stats
     print category.details
+
+    end = timeit.default_timer()
+    print "spend: %i s" % (end - start)
