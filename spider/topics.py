@@ -2,7 +2,7 @@
 __author__ = 'ggu'
 
 import re
-import forum.tool.utils
+from forum.tool.utils import get_id, get_page, save_to_file
 
 
 def get_user(data):
@@ -34,7 +34,7 @@ class TopicList:
 
     def get_list(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)
-        category_id = forum.tool.utils.get_id(uri)
+        category_id = get_id(uri)
 
         # print (uri, category_id)
 
@@ -65,7 +65,7 @@ class TopicList:
             # print  (tclcon_topic, tclcon_href, tclcon_user)
             topic_result['title'] = tclcon_topic
             topic_result['path'] = tclcon_href
-            topic_result['topic_id'] = forum.tool.utils.get_id(tclcon_href)  # topic id from url
+            topic_result['topic_id'] = get_id(tclcon_href)  # topic id from url
             topic_result['reporter'] = tclcon_user
 
             # Tags
@@ -96,10 +96,15 @@ class TopicList:
                 topic_result['last_post_datetime'] = last_post_datetime
                 topic_result['last_post_user'] = last_post_user
 
+        # save to file
+        current_page = get_page(uri)
+        current_file = "topics-" + str(category_id) + "-" + str(current_page)
+        save_to_file(current_file, results)
+
         # next page
         next_path = self.get_next_page(contents)
         if next_path:
-            results.extend(self.get_list(next_path))
+            self.get_list(next_path)
 
         return results
 
@@ -119,7 +124,6 @@ class Topic:
 
     def get_post(self):
         contents = self.__config.get_bs4request().get_contents(self.__uri)
-
 
     def get_replies(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)

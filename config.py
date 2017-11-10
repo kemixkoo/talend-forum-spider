@@ -2,14 +2,14 @@
 __author__ = 'ggu'
 
 import ConfigParser
-import os
+from os.path import split,realpath
 
 
 class Config:
     def __init__(self):
         # load from config file
         self.__file_config = ConfigParser.ConfigParser()
-        path = os.path.split(os.path.realpath(__file__))[0] + '/forum.conf'
+        path = split(realpath(__file__))[0] + '/forum.conf'
         self.__file_config.read(path)
 
         # custom setting

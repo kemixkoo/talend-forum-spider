@@ -2,7 +2,7 @@
 __author__ = 'ggu'
 
 import re
-import forum.tool.utils
+from forum.tool.utils import save_to_file, get_id
 
 
 class Category:
@@ -69,7 +69,7 @@ class Category:
                 subresult['title'] = sub_title
                 subresult['desc'] = sub_title_desc
                 subresult['path'] = sub_url
-                subresult['category_id'] = forum.tool.utils.get_id(sub_url)
+                subresult['category_id'] = get_id(sub_url)
                 subresult['topics'] = topics_num
                 subresult['posts'] = posts_num
                 subresult['talenders'] = talenders
@@ -90,12 +90,15 @@ if __name__ == "__main__":
 
     category = Category(Config())
 
-    # print forum.tool.utils.format_data(category.stats)
+    # print format_data(category.stats)
     # print "-------------------------------------"
-    # print forum.tool.utils.format_data(category.details)
+    # print format_data(category.details)
 
     print category.stats
     print category.details
+
+    save_to_file("categories-0.json", category.stats)
+    save_to_file("categories-1.json", category.details)
 
     end = timeit.default_timer()
     print "spend: %i s" % (end - start)

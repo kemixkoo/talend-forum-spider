@@ -2,32 +2,30 @@
 # -*-coding:utf-8-*-
 __author__ = 'ggu'
 
-import json
 import time
 from forum.spider.categories import Category
+from forum.config import Config
 from forum.spider.topics import TopicList
-import forum.tool.utils
+from forum.tool.utils import save_to_file
 
 print "################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
 
 # categories
-category = Category()
-# print forum.tool.utils.format_data(category.stats)
-# print forum.tool.utils.format_data(category.details)
+config = Config()
+category = Category(config)
 
 print "-------------------------------------------"
 # contents of topics
 categories_list = category.details
-for (top_title, sub_data) in categories_list.items():
-    if isinstance(sub_data, dict):
-        for (sub_title, data) in sub_data.items():
-            if isinstance(data, dict):
-                for (key, value) in data.items():
-                    if key == 'path':
-                        print "--------------------------------------"
-                        print sub_title + "===> path:" + value
-                        topiclist = TopicList(value)
-                        # print forum.tool.utils.format_data(topiclist.list)
-                        print (topicList.pages, len(topicList.list))
+
+save_to_file("categories-0.json", category.stats)
+save_to_file("categories-1.json", categories_list)
+
+topiclist = TopicList(config)
+
+for item in categories_list:
+    path = item['path']
+    category_id = item['category_id']
+    topiclist.get_list(path)
 
 print "################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
