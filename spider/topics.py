@@ -96,15 +96,11 @@ class TopicList:
                 topic_result['last_post_datetime'] = last_post_datetime
                 topic_result['last_post_user'] = last_post_user
 
-        # save to file
-        current_page = get_page(uri)
-        current_file = "topics-" + str(category_id) + "-" + str(current_page)
-        save_to_file(current_file, results)
 
         # next page
-        next_path = self.get_next_page(contents)
-        if next_path:
-            self.get_list(next_path)
+        # next_path = self.get_next_page(contents)
+        # if next_path:
+        #     self.get_list(next_path)
 
         return results
 

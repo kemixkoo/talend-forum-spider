@@ -3,13 +3,14 @@ __author__ = 'ggu'
 
 import re
 from forum.tool.utils import save_to_file, get_id
+from forum.spider.topics import TopicList
 
 
 class Category:
     def __init__(self, config):
         self.__config = config
         self.__contents = self.__config.get_bs4request().get_contents()
-        # self.__mongo = self.__config.get_mongo()
+        self.__topiclist = TopicList(config)
 
         self.stats = self.get_stats()
         self.details = self.get_details()
@@ -62,6 +63,9 @@ class Category:
                 # Last post
                 last_modified_datetime = tdtcr.a.string
 
+                # pages
+                pages = self.__topiclist.get_pages(sub_url)
+
                 # sub result
                 subresult = {}
 
@@ -69,13 +73,12 @@ class Category:
                 subresult['title'] = sub_title
                 subresult['desc'] = sub_title_desc
                 subresult['path'] = sub_url
-                subresult['category_id'] = get_id(sub_url)
+                subresult['id'] = get_id(sub_url)
+                subresult['pages'] = pages
                 subresult['topics'] = topics_num
                 subresult['posts'] = posts_num
                 subresult['talenders'] = talenders
                 subresult['last_modified_datatime'] = last_modified_datetime
-
-                # self.__mongo.add_categories(subresult)
 
                 results.append(subresult)
 

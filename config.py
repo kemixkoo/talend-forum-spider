@@ -59,11 +59,4 @@ class Config:
             self.__mongo = MongoConn(self)
         return self.__mongo
 
-    def get_category_uri(self, category_id, page=0):
-        if page > 0:
-            return 'viewforum.php?id=' + category_id + '&p=' + page
-        else:
-            return 'viewforum.php?id=' + category_id
 
-    def get_topic_uri(self, topic_id):
-        return 'viewtopic.php?id=' + topic_id

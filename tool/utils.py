@@ -11,6 +11,17 @@ def format_data(data):
     return json.dumps(data, indent=2)
 
 
+def get_viewforum_uri(category_id, page=1):
+    if page > 1:
+        return 'viewforum.php?id=' + str(category_id) + '&p=' + str(page)
+    else:
+        return 'viewforum.php?id=' + str(category_id)
+
+
+def get_viewtopic_uri(topic_id):
+    return 'viewtopic.php?id=' + str(topic_id)
+
+
 def get_id(data):
     url_ids = re.findall(r"\?id=(\d+)", data)
     id = -1
