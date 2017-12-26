@@ -2,35 +2,46 @@
 __author__ = 'ggu'
 
 import re
-from forum.tool.utils import get_id, get_page, save_to_file
+
+from forum.tool.utils import get_id
 
 
 def get_user(data):
     return data.string.replace('by', '').strip()
 
 
+def get_pages(config, uri):
+    contents = config.get_bs4request().get_contents(uri)
+
+    for pagepost in contents.findAll('div', class_='pagepost'):
+        for pagelink in pagepost.findAll('p', class_='pagelink'):
+            # if has next, so try to get the before one
+            next_path = get_next_page(contents)
+            if next_path:
+                next = pagelink.find('a', rel='next', recursive=False)
+                siblings = next.findPreviousSiblings('a')
+                if siblings:
+                    return int(siblings[0].string)
+            else:
+                strong = pagelink.find('strong')
+                if strong:
+                    return int(strong.string)
+
+    return 0
+
+def get_next_page(contents):
+    for pagepost in contents.findAll('div', class_='pagepost'):
+        for pagelink in pagepost.findAll('p', class_='pagelink'):
+            next = pagelink.find('a', rel='next', recursive=False)
+            if next:
+                return next['href']
+
 class TopicList:
     def __init__(self, config):
         self.__config = config
 
     def get_pages(self, uri):
-        contents = self.__config.get_bs4request().get_contents(uri)
-
-        for pagepost in contents.findAll('div', class_='pagepost'):
-            for pagelink in pagepost.findAll('p', class_='pagelink'):
-                # if has next, so try to get the before one
-                next_path = self.get_next_page(contents)
-                if next_path:
-                    next = pagelink.find('a', rel='next', recursive=False)
-                    siblings = next.findPreviousSiblings('a')
-                    if siblings:
-                        return int(siblings[0].string)
-                else:
-                    strong = pagelink.find('strong')
-                    if strong:
-                        return int(strong.string)
-
-        return 0
+        return get_pages(self.__config, uri)
 
     def get_list(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)
@@ -96,7 +107,6 @@ class TopicList:
                 topic_result['last_post_datetime'] = last_post_datetime
                 topic_result['last_post_user'] = last_post_user
 
-
         # next page
         # next_path = self.get_next_page(contents)
         # if next_path:
@@ -104,22 +114,29 @@ class TopicList:
 
         return results
 
-    def get_next_page(self, contents):
-        for pagepost in contents.findAll('div', class_='pagepost'):
-            for pagelink in pagepost.findAll('p', class_='pagelink'):
-                next = pagelink.find('a', rel='next', recursive=False)
-                if next:
-                    return next['href']
+
 
 
 class Topic:
-    def __init__(self, config, uri):
+    def __init__(self, config):
         self.__config = config
-        self.__uri = uri
-        self.url = self.__config['url'] + self.__uri
 
-    def get_post(self):
-        contents = self.__config.get_bs4request().get_contents(self.__uri)
+    def get_pages(self, uri):
+        return get_pages(self.__config, uri)
+
+    def get_post(self, uri):
+        contents = self.__config.get_bs4request().get_contents(uri)
+        topic_post = {}
+
+        firstpost = contents.find('div', id='punviewtopic').find('div', class_='firstpost')
+        if firstpost:
+            postdate = firstpost.h2.span.a.string
+            floor = int(firstpost.h2.span.span.string.replace('#', '').strip())
+            topic_post['post_date'] = postdate
+            topic_post['floor'] = floor
+
+            postbody = firstpost.find('div', class_='postbody')
+            # TODO
 
     def get_replies(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)
@@ -127,18 +144,28 @@ class Topic:
 
 if __name__ == "__main__":
     from forum.config import Config
-    import timeit
+    from datetime import datetime
 
-    start = timeit.default_timer()
+    startTime = datetime.now()
 
-    # Index >> Data Quality - Non technical discussions
-    topicList = TopicList(Config())
+    config = Config()
 
+    # list
+    topicList = TopicList(config)
     uri = 'viewforum.php?id=13'  # 13=(3,65) 35=(69,2065)
     pages = topicList.get_pages(uri)
     results = topicList.get_list(uri)
 
     print (pages, len(results))
 
-    end = timeit.default_timer()
-    print "spend: %i s" % (end - start)
+    # topic contents
+    topic = Topic(config)
+    t_uri = 'viewtopic.php?id=48691'
+    t_pages = topic.get_pages(t_uri)
+    t_post = topic.get_post(t_uri)
+    t_replies = topic.get_replies(t_uri)
+
+    print (t_pages, len(t_replies))
+
+    timeElapsed = datetime.now() - startTime
+    print('Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))

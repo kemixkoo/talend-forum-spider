@@ -2,12 +2,17 @@
 # -*-coding:utf-8-*-
 __author__ = 'ggu'
 
-import time, shutil, os
+import os
+import shutil
+import time
+from datetime import datetime
+
 from forum.config import Config
 from forum.spider.categories import Category
 from forum.spider.topics import TopicList
 from forum.tool import utils
 
+startTime = datetime.now()
 print "################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
 
 # clean the files folder
@@ -38,14 +43,24 @@ for item in categories_list:
     if pages < 1:
         continue
 
-    # for p in range(1, pages):
-    #     uri = utils.get_viewforum_uri(category_id, p)
-    #     result = topiclist.get_list(uri)
-    #
-    #     # save to file
-    #     current_file = "topicslist-" + str(category_id) + "-" + str(p)
-    #     utils.save_to_file(current_file, result)
+    for p in range(1, pages):
+        time.sleep(0.3)
+        uri = utils.get_viewforum_uri(category_id, p)
+        result = topiclist.get_list(uri)
 
-        # for one_topic in result:
+        # save to file
+        current_file = "topicslist-" + str(category_id) + "-" + str(p)
+        print(current_file)
+        utils.save_to_file(current_file + ".json", result)
+
+
+        for one_topic in result:
+            time.sleep(0.3)
+            topic_id=one_topic['topic_id']
+            topic_url = utils.get_viewtopic_uri(topic_id)
+
+
 
 print "################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
+timeElapsed = datetime.now() - startTime
+print('Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))

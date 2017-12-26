@@ -1,7 +1,7 @@
 # -*-coding:utf8-*-
 __author__ = 'ggu'
 
-import pymongo
+from pymongo import MongoClient
 
 
 class MongoConn:
@@ -9,7 +9,7 @@ class MongoConn:
         server = config['mongo.server']
         port = config['mongo.port']
 
-        self.__connection = pymongo.Connection(server, port)
+        self.__connection = MongoClient(server, port)
         self.__db = self.__connection.forum
 
     def add_categories(self, data):
