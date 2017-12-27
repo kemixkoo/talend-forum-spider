@@ -7,10 +7,10 @@ import shutil
 import time
 from datetime import datetime
 
-from forum.config import Config
-from forum.spider.categories import Category
-from forum.spider.topics import TopicList
-from forum.tool import utils
+from config import Config
+from spider.categories import Category
+from spider.topics import TopicList
+from tool import utils
 
 startTime = datetime.now()
 print "################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"

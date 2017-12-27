@@ -2,8 +2,9 @@
 __author__ = 'ggu'
 
 import re
-from forum.tool.utils import save_to_file, get_id
-from forum.spider.topics import TopicList
+
+from spider.topics import TopicList
+from tool.utils import save_to_file, get_id
 
 
 class Category:
@@ -86,7 +87,7 @@ class Category:
 
 
 if __name__ == "__main__":
-    from forum.config import Config
+    from config import Config
     import timeit
 
     start = timeit.default_timer()

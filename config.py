@@ -49,13 +49,13 @@ class Config:
 
     def get_bs4request(self):
         if not self.__bs4request:
-            from forum.tool.frequest import BS4Request
+            from tool.frequest import BS4Request
             self.__bs4request = BS4Request(self)
         return self.__bs4request
 
     def get_mongo(self):
         if not self.__mongo:
-            from forum.tool.fmongo import MongoConn
+            from tool.fmongo import MongoConn
             self.__mongo = MongoConn(self)
         return self.__mongo
 

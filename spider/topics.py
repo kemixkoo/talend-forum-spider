@@ -3,7 +3,7 @@ __author__ = 'ggu'
 
 import re
 
-from forum.tool.utils import get_id
+from tool.utils import get_id
 
 
 def get_user(data):
@@ -143,7 +143,7 @@ class Topic:
 
 
 if __name__ == "__main__":
-    from forum.config import Config
+    from config import Config
     from datetime import datetime
 
     startTime = datetime.now()
