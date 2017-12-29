@@ -18,8 +18,11 @@ def get_viewforum_uri(category_id, page=1):
         return 'viewforum.php?id=' + str(category_id)
 
 
-def get_viewtopic_uri(topic_id):
-    return 'viewtopic.php?id=' + str(topic_id)
+def get_viewtopic_uri(topic_id, page=1):
+    if page > 1:
+        return 'viewtopic.php?id=' + str(topic_id) + '&p=' + str(page)
+    else:
+        return 'viewtopic.php?id=' + str(topic_id)
 
 
 def get_id(data):

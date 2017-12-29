@@ -29,12 +29,14 @@ def get_pages(config, uri):
 
     return 0
 
+
 def get_next_page(contents):
     for pagepost in contents.findAll('div', class_='pagepost'):
         for pagelink in pagepost.findAll('p', class_='pagelink'):
             next = pagelink.find('a', rel='next', recursive=False)
             if next:
                 return next['href']
+
 
 class TopicList:
     def __init__(self, config):
@@ -115,8 +117,6 @@ class TopicList:
         return results
 
 
-
-
 class Topic:
     def __init__(self, config):
         self.__config = config
@@ -126,20 +126,119 @@ class Topic:
 
     def get_post(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)
-        topic_post = {}
 
-        firstpost = contents.find('div', id='punviewtopic').find('div', class_='firstpost')
-        if firstpost:
-            postdate = firstpost.h2.span.a.string
-            floor = int(firstpost.h2.span.span.string.replace('#', '').strip())
-            topic_post['post_date'] = postdate
-            topic_post['floor'] = floor
-
-            postbody = firstpost.find('div', class_='postbody')
-            # TODO
+        h_punviewtopic = contents.find('div', id='punviewtopic')
+        if h_punviewtopic:
+            h_firstpost = h_punviewtopic.find('div', class_='firstpost')
+            if h_firstpost:
+                return get_post_results(h_firstpost)
 
     def get_replies(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)
+        replies = []
+        h_punviewtopic = contents.find('div', id='punviewtopic')
+        if h_punviewtopic:
+            h_blockpost = h_punviewtopic.findAll('div', class_='blockpost')
+            if h_blockpost:
+                for h_each_blockpost in h_blockpost:
+                    if 'firstpost' not in h_each_blockpost['class']:
+                        replies.append(get_post_results(h_each_blockpost))
+        return replies
+
+
+def get_post_results(h_blockpost):
+    post_details = {}
+    postdate = h_blockpost.h2.span.a.string
+    floor = int(h_blockpost.h2.span.span.string.replace('#', '').strip())
+    post_details['post_date'] = postdate
+    post_details['floor'] = floor
+
+    h_postbody = h_blockpost.find('div', class_='postbody')
+
+    # user
+    h_postleft = h_postbody.find('div', class_='postleft')
+    h_a_reporter = h_postleft.dl.dt.strong
+    reporter = h_a_reporter.string
+    post_details['reporter'] = reporter
+    if h_a_reporter.a:
+        reporter_uri = h_a_reporter.a['href']
+        post_details['reporter_uri'] = reporter_uri
+
+    # type
+    h_usertitle = h_postleft.dl.find('dd', class_='usertitle')
+    reporter_type = h_usertitle.strong.string
+    post_details['type'] = reporter_type
+
+    # avatar pic
+    h_postavatar = h_postleft.dl.find('dd', class_='postavatar')
+    if h_postavatar:
+        avatar_uri = h_postavatar.img['src']
+        post_details['avatar_uri'] = avatar_uri
+
+    # 26 posts
+    h_postnum = h_usertitle.next_sibling
+    if h_postnum:
+        post_num = h_postnum.string
+        if post_num.endswith(' posts'):
+            post_num = post_num[:-6]
+        if post_num.endswith(' post'):
+            post_num = '1'
+        if '\n' not in post_num:
+            post_details['posts'] = int(post_num)
+
+    # stars
+    h_karma = h_postleft.dl.find('p', class_='karma')
+    if h_karma:
+        h_stars = h_karma.findAll('img', src='img/icon_star.png')
+        if h_stars:
+            post_details['stars'] = len(h_stars)
+
+    # title
+    h_postright = h_postbody.find('div', class_='postright')
+    title = unicode(h_postright.h3.string)
+    post_details['title'] = title
+    # status
+    if title.startswith('[resolved]'):
+        post_details['status'] = 'resolved'
+
+    # messages
+    h_postmsg = h_postright.find('div', class_='postmsg')
+    messges = unicode(h_postmsg.get_text())
+    post_details['messges'] = messges
+
+    # tags
+    labels = []
+    h_topiclabels = h_postmsg.findAll('div', class_='topiclabels')
+    if h_topiclabels:
+        for h_tl in h_topiclabels:
+            for h_a in h_tl.findAll('a'):
+                tag = h_a.string
+                labels.append(tag)
+    if len(labels) > 0:
+        post_details['tags'] = labels
+
+    # attached img
+    postimgs = []
+    for h_postimg in h_postmsg.findAll('a', class_='postimg'):
+        src = h_postimg.img['src']
+        postimgs.append(src)
+    if len(postimgs) > 0:
+        post_details['images'] = postimgs
+
+    # post signature
+    h_postsignature = h_postright.find('div', class_='postsignature')
+    if h_postsignature:
+        signature = unicode(h_postsignature.get_text())
+        post_details['signature_contents'] = signature
+        h_sigimage = h_postsignature.findAll('img', class_='sigimage')
+        if h_sigimage:
+            sigimgs = []
+            for h_each_sigimage in h_sigimage:
+                sigimgs.append(h_each_sigimage['src'])
+            if len(sigimgs) > 0:
+                post_details['signature_images'] = sigimgs
+
+    return post_details
 
 
 if __name__ == "__main__":
@@ -151,21 +250,28 @@ if __name__ == "__main__":
     config = Config()
 
     # list
-    topicList = TopicList(config)
-    uri = 'viewforum.php?id=13'  # 13=(3,65) 35=(69,2065)
-    pages = topicList.get_pages(uri)
-    results = topicList.get_list(uri)
-
-    print (pages, len(results))
+    # topicList = TopicList(config)
+    # uri = 'viewforum.php?id=13'  # 13=(3,65) 35=(69,2065)
+    # pages = topicList.get_pages(uri)
+    # results = topicList.get_list(uri)
+    # print (pages, len(results))
 
     # topic contents
     topic = Topic(config)
-    t_uri = 'viewtopic.php?id=48691'
+
+    # with Guest: 26137, more pages+tags+signature img:55245
+    #  redirect:31747 will be null post, [] for replies
+    t_uri = 'viewtopic.php?id=55245'
     t_pages = topic.get_pages(t_uri)
     t_post = topic.get_post(t_uri)
     t_replies = topic.get_replies(t_uri)
 
-    print (t_pages, len(t_replies))
+    print t_pages
+
+    import tool.utils
+
+    print tool.utils.format_data(t_post)
+    print tool.utils.format_data(t_replies)
 
     timeElapsed = datetime.now() - startTime
     print('Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))

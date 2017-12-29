@@ -6,6 +6,7 @@ https://www.talendforge.org/forum
 
 This is old forum, new one is https://community.talend.com
 
+BUT: some pages are redirect to Community. eg. https://www.talendforge.org/forum/viewtopic.php?id=31747
 
 # Modules
 
@@ -16,8 +17,7 @@ This is old forum, new one is https://community.talend.com
   `pip install certifi`
 
 - [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup)
-  Need download from the [site](https://www.crummy.com/software/BeautifulSoup/bs4/download)
-  `sudo python setup.py install`
+  `pip install beautifulsoup4`
 
 - [MongoClient](https://pypi.python.org/pypi/pymongo/)
   `pip install pymongo`
