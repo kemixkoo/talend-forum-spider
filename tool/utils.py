@@ -45,12 +45,22 @@ def get_target_files():
     return split(realpath(__file__))[0] + '/../target/files'
 
 
-def save_to_file(filename, data):
-    target_files = get_target_files()
-    if not exists(target_files):
-        makedirs(target_files)
+def save_to_file(file, data):
+    if not file:
+        return
 
-    file = target_files + '/' + filename
+    target_files = get_target_files()
+    if not str(file).startswith('/'):
+        file = target_files + '/' + file
+
+    files = split(file)
+    parent_folder = files[0]
+    if not exists(parent_folder):
+        makedirs(parent_folder)
+
+    if '.' not in files[1]:
+        file = file + '.json'
+
     fo = open(file, 'w')
 
     value = format_data(data)

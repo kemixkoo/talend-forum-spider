@@ -2,25 +2,55 @@
 __author__ = 'ggu'
 
 import ConfigParser
-from os.path import split,realpath
+import logging.config
+import os
+import shutil
+from os.path import split, realpath
 
 
 class Config:
     def __init__(self):
-        # load from config file
         self.__file_config = ConfigParser.ConfigParser()
-        path = split(realpath(__file__))[0] + '/forum.conf'
-        self.__file_config.read(path)
+        base_path = split(realpath(__file__))[0]
+
+        # load from config file
+        self.__file_config.read(base_path + '/forum.conf')
 
         # custom setting
         self.settings = {}
 
-        self.settings['encoding'] = 'utf-8'
+        default_target_folder = base_path + '/target'
+        if not os.path.exists(default_target_folder):
+            os.makedirs(default_target_folder)
+
+        # set spider result folder
+        spider_result_folder = self.__getitem__('spider.result_folder')
+        if spider_result_folder:
+            # if relative path, add target
+            if not spider_result_folder.startswith('/'):
+                spider_result_folder = default_target_folder + '/' + spider_result_folder
+        else:
+            spider_result_folder = default_target_folder + '/files'
+
+        if not os.path.exists(spider_result_folder):
+            os.makedirs(spider_result_folder)
+
+        self.set('spider.result_folder', spider_result_folder)
+
+        # load logger
+        default_log_folder = base_path + '/log'
+        shutil.rmtree(default_log_folder, True)
+        if not os.path.exists(default_log_folder):
+            os.makedirs(default_log_folder)
+
+        logging.config.fileConfig(base_path + '/logging.conf')
+
+        # encoding
+        self.set('encoding', 'utf-8')
 
         # for site
-        # self.settings['url'] = self.__file_config.get('site', 'url')
-        self.settings['site.request_headers'] = {
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0'}
+        self.set('site.request_headers', {
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0'})
 
         # init obj
         self.__bs4request = None
@@ -44,8 +74,8 @@ class Config:
             return None
 
     def set(self, key, val):
-        if key and val and key in self.settings.keys():
-            self.settings[key] = val
+        # if key and val and key in self.settings.keys():
+        self.settings[key] = val
 
     def get_bs4request(self):
         if not self.__bs4request:
@@ -58,5 +88,3 @@ class Config:
             from tool.fmongo import MongoConn
             self.__mongo = MongoConn(self)
         return self.__mongo
-
-

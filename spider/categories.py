@@ -91,8 +91,8 @@ if __name__ == "__main__":
     import timeit
 
     start = timeit.default_timer()
-
-    category = Category(Config())
+    config = Config()
+    category = Category(config)
 
     # print format_data(category.stats)
     # print "-------------------------------------"
@@ -101,8 +101,9 @@ if __name__ == "__main__":
     print category.stats
     print category.details
 
-    save_to_file("categories-0.json", category.stats)
-    save_to_file("categories-1.json", category.details)
+    result_folder = config['spider.result_folder']
+    save_to_file(result_folder + '/categories-stats', category.stats)
+    save_to_file(result_folder + '/categories-details', category.details)
 
     end = timeit.default_timer()
     print "spend: %i s" % (end - start)

@@ -2,6 +2,7 @@
 # -*-coding:utf-8-*-
 __author__ = 'ggu'
 
+import logging
 import os
 import shutil
 import time
@@ -17,37 +18,40 @@ class Getoutofloop(Exception):
     pass
 
 
-startTime = datetime.now()
-print "################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
+logger = logging.getLogger('spider')
 
-# clean the files folder
-target_files_folder = utils.get_target_files()
-if os.path.exists(target_files_folder):
-    shutil.rmtree(target_files_folder)
+startTime = datetime.now()
 
 # categories
 config = Config()
 category = Category(config)
 
-print "-------------------------------------------"
+result_folder = config['spider.result_folder']
+# clean the files folder
+if os.path.exists(result_folder):
+    shutil.rmtree(result_folder, True)
+
+logger.info("################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################")
+logger.info("-------------------------------------------")
 # contents of topics
 categories_list = category.details
 
-utils.save_to_file("summaries.json", category.stats)
-utils.save_to_file("categories.json", categories_list)
+utils.save_to_file(result_folder + '/summaries', category.stats)
+utils.save_to_file(result_folder + '/categories', categories_list)
 
 topiclist = TopicList(config)
 topic = Topic(config)
 
 redirect_url = []
-total = 0;
+total = 0
+
 try:
     for category in categories_list:
         # category_path = category['path']
         category_id = category['id']
         category_pages = category['pages']
 
-        print (category_id, category_pages)
+        logger.info((category_id, category_pages))
 
         if category_pages < 1:
             continue
@@ -57,9 +61,9 @@ try:
             category_list = topiclist.get_list(category_uri)
 
             # save to file
-            category_out_file = "topicslist-" + str(category_id) + "-" + str(cp)
-            print(category_out_file)
-            utils.save_to_file(category_out_file + ".json", category_list)
+            category_out_file = str(category_id) + '-' + 'topicslist-' + str(cp)
+            utils.save_to_file(result_folder + '/' + category_out_file, category_list)
+            logger.info((len(category_list), category_out_file))
 
             time.sleep(0.5)
 
@@ -77,9 +81,10 @@ try:
                 topic_post['pages'] = topic_pages
 
                 # save to file
-                post_out_file = "topic-" + str(topic_id) + "-0"
-                print(topic_pages, post_out_file)
-                utils.save_to_file(post_out_file + ".json", topic_post)
+                topic_filename_prefix = str(category_id) + '-' + str(topic_id) + '-'
+                post_out_file = topic_filename_prefix + 'topic-0'
+                utils.save_to_file(result_folder + '/' + post_out_file, topic_post)
+                logger.info((topic_pages, post_out_file))
 
                 for tp in range(1, topic_pages + 1):
                     time.sleep(0.5)
@@ -91,19 +96,22 @@ try:
                     each_page_url = utils.get_viewtopic_uri(topic_id, tp)
                     each_page_replies = topic.get_replies(each_page_url)
                     if each_page_replies:
-                        each_replies_out_file = "topic-" + str(topic_id) + "-" + str(tp)
-                        print(len(each_page_replies), each_replies_out_file)
-                        utils.save_to_file(each_replies_out_file + ".json", each_page_replies)
-                        print "################Finished at( " + time.strftime(
-                            "%Y-%m-%d %H:%M:%S") + " )################"
+                        each_replies_out_file = topic_filename_prefix + 'topic-' + str(tp)
+                        utils.save_to_file(result_folder + '/' + each_replies_out_file, each_page_replies)
+                        logger.info((len(each_page_replies), each_replies_out_file))
+
 
 
 except Getoutofloop:
     pass
+except Exception, e:
+    logger.exception(str(e), exc_info=True)
 
 if len(redirect_url) > 0:
-    utils.save_to_file('redirect_urls.json', redirect_url)
+    redirect_file = 'redirect_urls.json'
+    utils.save_to_file(result_folder + '/' + redirect_file, redirect_url)
+    logger.info((len(redirect_url), len(redirect_url)))
 
-print "################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################"
+logger.info("################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################")
 timeElapsed = datetime.now() - startTime
-print(total, 'Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))
+logger.info((total, 'Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed)))
