@@ -242,7 +242,7 @@ def get_post_results(h_blockpost):
 
 
 if __name__ == "__main__":
-    from config import Config
+    from conf.config import Config
     from datetime import datetime
 
     startTime = datetime.now()

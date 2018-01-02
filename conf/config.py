@@ -19,7 +19,7 @@ class Config:
         # custom setting
         self.settings = {}
 
-        default_target_folder = base_path + '/target'
+        default_target_folder = base_path + '/../target'
         if not os.path.exists(default_target_folder):
             os.makedirs(default_target_folder)
 
@@ -38,7 +38,7 @@ class Config:
         self.set('spider.result_folder', spider_result_folder)
 
         # load logger
-        default_log_folder = base_path + '/log'
+        default_log_folder = base_path + '/../log'
         shutil.rmtree(default_log_folder, True)
         if not os.path.exists(default_log_folder):
             os.makedirs(default_log_folder)
@@ -55,6 +55,7 @@ class Config:
         # init obj
         self.__bs4request = None
         self.__mongo = None
+        self.__proxies = None
 
     def __getitem__(self, key):
         value = self.get(key)
@@ -88,3 +89,18 @@ class Config:
             from tool.fmongo import MongoConn
             self.__mongo = MongoConn(self)
         return self.__mongo
+
+    def get_proxies(self):
+        if not self.__proxies:
+            proxis_file = split(realpath(__file__))[0] + '/proxies.json'
+            # self.__proxies = json.loads(open(proxis_file, 'r').read().replace("'", '"').replace("u", ''))
+        return self.__proxies
+
+    def get_random_proxy(self, type='https'):
+        proxies = self.get_proxies()
+        if len(proxies) > 0:
+            import random
+            proxy_ip = random.choice(proxies[type])
+            proxies = {type: proxy_ip}
+            # print proxies
+            return proxies

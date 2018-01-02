@@ -1,9 +1,9 @@
 # -*-coding:utf-8-*-
 __author__ = 'ggu'
 
+import certifi
 import urllib3
 import urllib3.contrib.pyopenssl
-import certifi
 from bs4 import BeautifulSoup
 
 urllib3.contrib.pyopenssl.inject_into_urllib3()
@@ -18,6 +18,13 @@ class BS4Request:
         full_url = self.__config['site.url'] + path
 
         req = self.__http.request('GET', full_url, headers=self.__config['site.request_headers'])
+        # import requests
+        # req = requests.session()
+        # one_proxy = self.__config.get_random_proxy()
+        # if one_proxy:
+        #     req.proxies = self.__config.get_random_proxy()
+        # resp = req.get(full_url, headers=self.__config['site.request_headers'],verify=False)
+
         html_data = req.data.decode(self.__config['encoding'])
 
         contents = BeautifulSoup(html_data, 'html.parser')

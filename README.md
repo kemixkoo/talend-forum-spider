@@ -23,4 +23,6 @@ BUT: some pages are redirect to Community. eg. https://www.talendforge.org/forum
   `pip install pymongo`
 
 
+# Run
+Go to "run" folder for *spider_main.py*
 

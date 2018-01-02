@@ -42,7 +42,7 @@ def get_page(data):
 
 
 def get_target_files():
-    return split(realpath(__file__))[0] + '/../target/files'
+    return split(realpath(__file__))[0] + '/../target/files-3-2'
 
 
 def save_to_file(file, data):

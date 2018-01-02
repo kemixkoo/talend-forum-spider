@@ -87,7 +87,7 @@ class Category:
 
 
 if __name__ == "__main__":
-    from config import Config
+    from conf.config import Config
     import timeit
 
     start = timeit.default_timer()

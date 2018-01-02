@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*-coding:utf-8-*-
-__author__ = 'ggu'
+__author__ = 'Kemix Koo'
 
 import logging
 import os
@@ -8,7 +8,7 @@ import shutil
 import time
 from datetime import datetime
 
-from config import Config
+from conf.config import Config
 from spider.categories import Category
 from spider.topics import TopicList, Topic
 from tool import utils
