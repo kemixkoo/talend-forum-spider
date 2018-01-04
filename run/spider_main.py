@@ -36,13 +36,16 @@ logger.info("-------------------------------------------")
 # contents of topics
 categories_list = category.details
 
-utils.save_to_file(result_folder + '/summaries', category.stats)
-utils.save_to_file(result_folder + '/categories', categories_list)
+prefix_file_name = '0-'
+
+utils.save_to_file(result_folder + '/' + prefix_file_name + 'summaries', category.stats)
+utils.save_to_file(result_folder + '/' + prefix_file_name + 'categories', categories_list)
 
 topiclist = TopicList(config)
 topic = Topic(config)
 
-redirect_url = []
+redirect_urls = []
+empty_urls = []
 total = 0
 
 try:
@@ -51,19 +54,21 @@ try:
         category_id = category['id']
         category_pages = category['pages']
 
-        logger.info((category_id, category_pages))
-
         if category_pages < 1:
             continue
+
+        logger.info((category_id, category_pages))
 
         for cp in range(1, category_pages + 1):
             category_uri = utils.get_viewforum_uri(category_id, cp)
             category_list = topiclist.get_list(category_uri)
 
             # save to file
-            category_out_file = str(category_id) + '-' + 'topicslist-' + str(cp)
-            utils.save_to_file(result_folder + '/' + category_out_file, category_list)
+            prefix_topic_name = str(category_id) + '-topic-' + str(cp)
+            category_out_file = prefix_topic_name + '-list'
+
             logger.info((len(category_list), category_out_file))
+            utils.save_to_file(result_folder + '/' + category_out_file, category_list)
 
             time.sleep(0.5)
 
@@ -73,18 +78,24 @@ try:
                 topic_url = utils.get_viewtopic_uri(topic_id)
 
                 topic_pages = topic.get_pages(topic_url)
-                if topic_pages < 1:
-                    redirect_url.append(topic_url)
-                    continue
+                if topic_pages is None or topic_pages < 1:
+                    redirect_urls.append(topic_url)
+                    continue  # didn't find the pages
 
                 topic_post = topic.get_post(topic_url)
+                if topic_post is None or len(topic_post) < 1:
+                    empty_urls.append(topic_url)
+                    continue  # even no post, empty topic
+
                 topic_post['pages'] = topic_pages
+                topic_post['url'] = topic_url
 
                 # save to file
-                topic_filename_prefix = str(category_id) + '-' + str(topic_id) + '-'
-                post_out_file = topic_filename_prefix + 'topic-0'
-                utils.save_to_file(result_folder + '/' + post_out_file, topic_post)
+                topic_filename_prefix = prefix_topic_name + '-' + str(topic_id) + '-'
+                post_out_file = topic_filename_prefix + '0'
+
                 logger.info((topic_pages, post_out_file))
+                utils.save_to_file(result_folder + '/' + post_out_file, topic_post)
 
                 for tp in range(1, topic_pages + 1):
                     time.sleep(0.5)
@@ -95,10 +106,15 @@ try:
 
                     each_page_url = utils.get_viewtopic_uri(topic_id, tp)
                     each_page_replies = topic.get_replies(each_page_url)
-                    if each_page_replies:
-                        each_replies_out_file = topic_filename_prefix + 'topic-' + str(tp)
-                        utils.save_to_file(result_folder + '/' + each_replies_out_file, each_page_replies)
-                        logger.info((len(each_page_replies), each_replies_out_file))
+
+                    if each_page_replies is None or len(each_page_replies) < 1:
+                        continue  # no any replies
+
+                    each_page_replies_num = len(each_page_replies)
+                    each_replies_out_file = topic_filename_prefix + str(tp) + '-' + str(each_page_replies_num)
+
+                    logger.info((each_page_replies_num, each_replies_out_file))
+                    utils.save_to_file(result_folder + '/' + each_replies_out_file, each_page_replies)
 
 
 
@@ -107,10 +123,15 @@ except Getoutofloop:
 except Exception, e:
     logger.exception(str(e), exc_info=True)
 
-if len(redirect_url) > 0:
-    redirect_file = 'redirect_urls.json'
-    utils.save_to_file(result_folder + '/' + redirect_file, redirect_url)
-    logger.info((len(redirect_url), len(redirect_url)))
+if len(redirect_urls) > 0:
+    redirect_file = result_folder + '/' + prefix_file_name + 'redirect_urls.json'
+    utils.save_to_file(redirect_file, redirect_urls)
+    logger.info((len(redirect_urls), redirect_file))
+
+if len(empty_urls) > 0:
+    empty_file = result_folder + '/' + prefix_file_name + 'empty_urls.json'
+    utils.save_to_file(empty_file, empty_urls)
+    logger.info((len(empty_urls), empty_file))
 
 logger.info("################END( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################")
 timeElapsed = datetime.now() - startTime
