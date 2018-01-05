@@ -27,7 +27,7 @@ class BS4Request:
                 count += 1
             except Exception:
                 import time
-                time.sleep(2.0)
+                time.sleep(0.5)
 
         # import requests
         # req = requests.session()

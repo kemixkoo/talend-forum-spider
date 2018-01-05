@@ -70,7 +70,7 @@ try:
             logger.info((len(category_list), category_out_file))
             utils.save_to_file(result_folder + '/' + category_out_file, category_list)
 
-            time.sleep(0.5)
+            time.sleep(0.3)
 
             for one_topic in category_list:
                 time.sleep(0.3)
@@ -98,7 +98,7 @@ try:
                 utils.save_to_file(result_folder + '/' + post_out_file, topic_post)
 
                 for tp in range(1, topic_pages + 1):
-                    time.sleep(0.5)
+                    time.sleep(0.3)
 
                     total = total + 1
                     # if total > 100:
