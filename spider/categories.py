@@ -3,15 +3,13 @@ __author__ = 'ggu'
 
 import re
 
-from spider.topics import TopicList
-from tool.utils import save_to_file, get_id
+from tool.utils import save_to_file, get_id, get_uri_pages
 
 
 class Category:
     def __init__(self, config):
         self.__config = config
         self.__contents = self.__config.get_bs4request().get_contents()
-        self.__topiclist = TopicList(config)
 
         self.stats = self.get_stats()
         self.details = self.get_details()
@@ -65,7 +63,7 @@ class Category:
                 last_modified_datetime = tdtcr.a.string
 
                 # pages
-                pages = self.__topiclist.get_pages(sub_url)
+                pages = get_uri_pages(self.__config, sub_url)
 
                 # sub result
                 subresult = {}

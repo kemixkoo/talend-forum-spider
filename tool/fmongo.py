@@ -9,17 +9,5 @@ class MongoConn:
         server = config['mongo.server']
         port = config['mongo.port']
 
-        self.__connection = MongoClient(server, port)
-        self.__db = self.__connection.forum
-
-    def add_categories(self, data):
-        categories = self.__db.categories
-        categories.insert(data)
-
-    def add_topiclist(self, data):
-        topiclist = self.__db.topiclist
-        topiclist.insert(data)
-
-    def add_topic(self, data):
-        topics = self.__db.topics
-        topics.insert(data)
+        self.__connection = MongoClient(server, int(port))
+        self.db = self.__connection.forum

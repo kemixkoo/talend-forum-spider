@@ -13,32 +13,44 @@ from spider.categories import Category
 from spider.topics import TopicList, Topic
 from tool import utils
 
-
-class Getoutofloop(Exception):
-    pass
-
-
 logger = logging.getLogger('spider')
 
 startTime = datetime.now()
 
-# categories
-config = Config()
-category = Category(config)
+logger.info("################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################")
+logger.info("-------------------------------------------")
 
+config = Config()
 result_folder = config['spider.result_folder']
 # clean the files folder
 if os.path.exists(result_folder):
     shutil.rmtree(result_folder, True)
 
-logger.info("################START( " + time.strftime("%Y-%m-%d %H:%M:%S") + " )################")
-logger.info("-------------------------------------------")
+
+def retrieveTopicReplies(topic, topic_id, topic_page, topic_filename_prefix):
+    each_page_url = utils.get_viewtopic_uri(topic_id, topic_page)
+    each_page_replies = topic.get_uri_replies(each_page_url)
+
+    if each_page_replies is None or len(each_page_replies) < 1:
+        return  # no any replies
+
+    each_page_replies_num = len(each_page_replies)
+    each_replies_out_file = topic_filename_prefix + str(topic_page) + '-' + str(each_page_replies_num)
+
+    logger.info((each_page_replies_num, each_replies_out_file))
+    utils.save_to_file(result_folder + '/' + each_replies_out_file, each_page_replies)
+
+
+# categories
+category = Category(config)
+
 # contents of topics
+summaries = category.stats
 categories_list = category.details
 
 prefix_file_name = '0-'
 
-utils.save_to_file(result_folder + '/' + prefix_file_name + 'summaries', category.stats)
+utils.save_to_file(result_folder + '/' + prefix_file_name + 'summaries', summaries)
 utils.save_to_file(result_folder + '/' + prefix_file_name + 'categories', categories_list)
 
 topiclist = TopicList(config)
@@ -61,28 +73,30 @@ try:
 
         for cp in range(1, category_pages + 1):
             category_uri = utils.get_viewforum_uri(category_id, cp)
-            category_list = topiclist.get_list(category_uri)
+            topic_list = topiclist.get_list(category_uri)
 
             # save to file
             prefix_topic_name = str(category_id) + '-topic-' + str(cp)
-            category_out_file = prefix_topic_name + '-list'
+            topic_list_out_file = prefix_topic_name + '-list'
 
-            logger.info((len(category_list), category_out_file))
-            utils.save_to_file(result_folder + '/' + category_out_file, category_list)
+            logger.info((len(topic_list), topic_list_out_file))
+            utils.save_to_file(result_folder + '/' + topic_list_out_file, topic_list)
 
             time.sleep(0.3)
 
-            for one_topic in category_list:
+            for one_topic in topic_list:
                 time.sleep(0.3)
                 topic_id = one_topic['topic_id']
                 topic_url = utils.get_viewtopic_uri(topic_id)
 
-                topic_pages = topic.get_pages(topic_url)
+                topic_contents = topic.get_contents(topic_url)
+
+                topic_pages = utils.get_pages(topic_contents)
                 if topic_pages is None or topic_pages < 1:
                     redirect_urls.append(topic_url)
                     continue  # didn't find the pages
 
-                topic_post = topic.get_post(topic_url)
+                topic_post = topic.get_post(topic_contents)
                 if topic_post is None or len(topic_post) < 1:
                     empty_urls.append(topic_url)
                     continue  # even no post, empty topic
@@ -101,25 +115,8 @@ try:
                     time.sleep(0.3)
 
                     total = total + 1
-                    # if total > 100:
-                    #     raise Getoutofloop()  # stop to test
+                    retrieveTopicReplies(topic, topic_id, tp, topic_filename_prefix)
 
-                    each_page_url = utils.get_viewtopic_uri(topic_id, tp)
-                    each_page_replies = topic.get_replies(each_page_url)
-
-                    if each_page_replies is None or len(each_page_replies) < 1:
-                        continue  # no any replies
-
-                    each_page_replies_num = len(each_page_replies)
-                    each_replies_out_file = topic_filename_prefix + str(tp) + '-' + str(each_page_replies_num)
-
-                    logger.info((each_page_replies_num, each_replies_out_file))
-                    utils.save_to_file(result_folder + '/' + each_replies_out_file, each_page_replies)
-
-
-
-except Getoutofloop:
-    pass
 except Exception, e:
     logger.exception(str(e), exc_info=True)
 

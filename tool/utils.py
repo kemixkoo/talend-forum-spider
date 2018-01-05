@@ -33,16 +33,44 @@ def get_id(data):
     return id
 
 
-def get_page(data):
-    url_pages = re.findall(r"\&p=(\d+)", data)
-    id = 1  # even the first one is not in url
-    if url_pages:
-        id = int(url_pages[0])
-    return id
+def get_user(data):
+    return data.string.replace('by', '').strip()
+
+
+def get_uri_pages(config, uri):
+    contents = config.get_bs4request().get_contents(uri)
+    return get_pages(contents)
+
+
+def get_pages(contents):
+    if contents is None:
+        return
+
+    for pagepost in contents.findAll('div', class_='pagepost'):
+        for pagelink in pagepost.findAll('p', class_='pagelink'):
+            # if has next, so try to get the before one
+            next_path = get_next_page(contents)
+            if next_path:
+                next = pagelink.find('a', rel='next', recursive=False)
+                siblings = next.findPreviousSiblings('a')
+                if siblings:
+                    return int(siblings[0].string)
+            else:
+                strong = pagelink.find('strong')
+                if strong:
+                    return int(strong.string)
+
+
+def get_next_page(contents):
+    for pagepost in contents.findAll('div', class_='pagepost'):
+        for pagelink in pagepost.findAll('p', class_='pagelink'):
+            next = pagelink.find('a', rel='next', recursive=False)
+            if next:
+                return next['href']
 
 
 def get_target_files():
-    return split(realpath(__file__))[0] + '/../target/files-3-2'
+    return split(realpath(__file__))[0] + '/../target/files'
 
 
 def save_to_file(file, data):
