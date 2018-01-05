@@ -35,6 +35,18 @@ empty_urls = []
 total = 0
 
 
+def out_data(file, mongo_set, data):
+    if data is None or len(data) < 1:
+        return
+
+    if file:
+        logger.info((os.path.split(file)[1], len(data)))
+        utils.save_to_file(file, data)
+
+    if mongo_set and data:
+        mongo_set.insert(data)
+
+
 def retrieveCategories():
     category = Category(config)
 
@@ -45,13 +57,8 @@ def retrieveCategories():
     summaries_out_file = category_base_path + 'summaries'
     categories_out_file = category_base_path + 'categories'
 
-    utils.save_to_file(summaries_out_file, summaries)
-    utils.save_to_file(categories_out_file, categories_list)
-
-    logger.info((os.path.split(categories_out_file)[1], len(categories_list)))
-
-    mongo.db.summaries.insert(summaries)
-    mongo.db.categories.insert(categories_list)
+    out_data(summaries_out_file, mongo.db.summaries, summaries)
+    out_data(categories_out_file, mongo.db.categories, categories_list)
 
 
 def retrieveTopicList(one_category):
@@ -71,11 +78,9 @@ def retrieveTopicList(one_category):
 
         # save to file
         topic_file_name_prefix = str(category_id) + '-topic-' + str(cp)
-        topic_list_out_file = topic_file_name_prefix + '-list'
+        topic_list_out_file = result_folder + '/' + topic_file_name_prefix + '-list'
 
-        logger.info((len(topic_list), topic_list_out_file))
-        utils.save_to_file(result_folder + '/' + topic_list_out_file, topic_list)
-        mongo.db.topiclist.insert(topic_list)
+        out_data(topic_list_out_file, mongo.db.topiclist, topic_list)
 
 
 def retrieveTopicPost(one_topic):
@@ -144,16 +149,16 @@ try:
         time.sleep(0.3)
         retrieveTopicList(one_category)
 
-    # for one_topic in mongo.db.topiclist.find():
-    #     time.sleep(0.3)
-    #     retrieveTopicPost(one_topic)
-    #
-    # for one_post in mongo.db.posts.find():
-    #     pages = int(one_post['pages'])
-    #
-    #     for tp in range(1, pages + 1):
-    #         time.sleep(0.3)
-    #         retrieveTopicReplies(one_post, tp)
+        # for one_topic in mongo.db.topiclist.find():
+        #     time.sleep(0.3)
+        #     retrieveTopicPost(one_topic)
+        #
+        # for one_post in mongo.db.posts.find():
+        #     pages = int(one_post['pages'])
+        #
+        #     for tp in range(1, pages + 1):
+        #         time.sleep(0.3)
+        #         retrieveTopicReplies(one_post, tp)
 
 
 
