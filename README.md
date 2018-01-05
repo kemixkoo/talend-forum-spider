@@ -24,5 +24,7 @@ BUT: some pages are redirect to Community. eg. https://www.talendforge.org/forum
 
 
 # Run
-Go to "run" folder for *spider_main.py*
+Go to "run" folder:
+- `files_runner.py`, will save all data to "target/files" folder.
+- `mongo-runner.py`, will save all data to Mongo DB, and save some basic data to "target/files" folder.
 
