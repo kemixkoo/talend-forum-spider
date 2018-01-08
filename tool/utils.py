@@ -25,12 +25,20 @@ def get_viewtopic_uri(topic_id, page=1):
         return 'viewtopic.php?id=' + str(topic_id)
 
 
-def get_id(data):
-    url_ids = re.findall(r"\?id=(\d+)", data)
-    id = -1
+def find_id(uri):
+    url_ids = re.findall(r"\?id=(\d+)", uri)
     if url_ids:
-        id = int(url_ids[0])
-    return id
+        return int(url_ids[0])
+
+
+def find_page(uri):
+    id = find_id(uri)
+    if id and id > 0:  # must existed the id first
+        found_data = re.findall(r"\?id=(\d+)\&p=(\d+)", uri)
+        if found_data and len(found_data) > 1:# existed the page
+            return int(found_data[1])
+        else:
+            return 1  # if not existed, will be 1 by default
 
 
 def get_user(data):

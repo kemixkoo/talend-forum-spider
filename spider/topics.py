@@ -15,7 +15,8 @@ class TopicList:
 
     def get_list(self, uri):
         contents = self.__config.get_bs4request().get_contents(uri)
-        category_id = utils.get_id(uri)
+        category_id = utils.find_id(uri)
+        category_page = utils.find_page(uri)
 
         # print (uri, category_id)
 
@@ -25,6 +26,9 @@ class TopicList:
         for tr in inbox_table.table.tbody.findAll('tr', class_=re.compile('^row(odd|even)$')):
             topic_result = {}
             topic_result['category_id'] = category_id
+            if category_page:
+                topic_result['category_page'] = category_page
+
             results.append(topic_result)
 
             ismoved = 0
@@ -45,8 +49,8 @@ class TopicList:
 
             # print  (tclcon_topic, tclcon_href, tclcon_user)
             topic_result['title'] = tclcon_topic
-            topic_result['path'] = tclcon_href
-            topic_result['topic_id'] = utils.get_id(tclcon_href)  # topic id from url
+            topic_result['uri'] = tclcon_href
+            topic_result['topic_id'] = utils.find_id(tclcon_href)  # topic id from url
             topic_result['reporter'] = tclcon_user
 
             # Tags
@@ -192,6 +196,32 @@ class Topic:
         h_postmsg = h_postright.find('div', class_='postmsg')
         messges = unicode(h_postmsg.get_text())
         post_details['messges'] = messges
+
+        # filter the codes
+        codes = []
+        for h_codebox in h_postright.findAll('div', class_='codebox'):
+            code = h_codebox.get_text()
+            codes.append(code)
+
+        if len(codes) > 0:
+            post_details['codes'] = codes
+
+        # filter the quotes
+        quotes = []
+        for h_quotebox in h_postright.findAll('div', class_='quotebox'):
+            quote = {}
+            if h_quotebox.cite:
+                cite_str = h_quotebox.cite.string
+                quote['cite'] = cite_str
+            if h_quotebox.blockquote:
+                quote_message = h_quotebox.blockquote.get_text()
+                quote['message'] = quote_message
+
+            if len(quote) > 0:
+                quotes.append(quote)
+
+        if len(quotes) > 0:
+            post_details['quotes'] = quotes
 
         # tags
         labels = []

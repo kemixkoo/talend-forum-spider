@@ -3,7 +3,7 @@ __author__ = 'ggu'
 
 import re
 
-from tool.utils import save_to_file, get_id, get_uri_pages
+from tool.utils import save_to_file, find_id, get_uri_pages
 
 
 class Category:
@@ -72,7 +72,7 @@ class Category:
                 subresult['title'] = sub_title
                 subresult['desc'] = sub_title_desc
                 subresult['path'] = sub_url
-                subresult['id'] = get_id(sub_url)
+                subresult['id'] = find_id(sub_url)
                 subresult['pages'] = pages
                 subresult['topics'] = topics_num
                 subresult['posts'] = posts_num
