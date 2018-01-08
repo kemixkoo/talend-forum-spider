@@ -195,29 +195,29 @@ if __name__ == "__main__":
 
         # spent about 1.5 hours
 
-        for one_topic in mongo.db.topiclist.find():
-            time.sleep(0.3)
-            # print one_topic
-            retrieveTopicPost(one_topic)
-        print 'TopicList: ' + str(mongo.db.topiclist.count())
-
-        # spent about 12 hours
-
-        for one_post in mongo.db.posts.find():
-            pages = int(one_post['pages'])
-
-            for tp in range(1, pages + 1):
-                time.sleep(0.3)
-                retrieveTopicReplies(one_post, tp)
+        # for one_topic in mongo.db.topiclist.find():
+        #     time.sleep(0.3)
+        #     # print one_topic
+        #     retrieveTopicPost(one_topic)
+        # print 'TopicList: ' + str(mongo.db.topiclist.count())
+        #
+        # # spent about 12 hours
+        #
+        # for one_post in mongo.db.posts.find():
+        #     pages = int(one_post['pages'])
+        #
+        #     for tp in range(1, pages + 1):
+        #         time.sleep(0.3)
+        #         retrieveTopicReplies(one_post, tp)
 
     except Exception, e:
         mongo_log(str(e), status='error')
         logger.exception(str(e), exc_info=True)
 
     out_data(result_folder + '/0-redirect_urls.json', mongo.db.redirect, {'urls': redirect_urls},
-             message='Existed ' + len(redirect_urls))
+             message='Existed ' + str(len(redirect_urls)))
     out_data(result_folder + '/0-empty_urls.json', mongo.db.empty, {'urls': empty_urls},
-             message='Existed ' + len(empty_urls))
+             message='Existed ' + str(len(empty_urls)))
 
     #
     timeElapsed = datetime.now() - startTime
