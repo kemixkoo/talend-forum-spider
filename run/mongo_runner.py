@@ -30,6 +30,7 @@ if os.path.exists(result_folder):
 
 redirect_urls = []
 empty_urls = []
+no_replies_urls = []
 
 
 def mongo_log(data, status='info'):
@@ -51,14 +52,14 @@ def out_data(file, mongo_set, data, message=None):
     if data is None or len(data) < 1:
         return
 
-    if message:
-        mongo_log(message)
-
-    if file:
+    if file and data:
         logger.info((os.path.split(file)[1], len(data)))
         utils.save_to_file(file, data)
 
-    if mongo_set:
+    if message:
+        mongo_log(message)
+
+    if mongo_set and data:
         mongo_set.insert(data)
 
 
@@ -81,7 +82,7 @@ def retrieveCategories():
 
 def retrieveTopicList(one_category):
     # category_path = one_category['path']
-    category_id = one_category['id']
+    category_id = one_category['category_id']
     category_pages = one_category['pages']
 
     if category_pages < 1:
@@ -131,13 +132,19 @@ def retrieveTopicPost(one_topic):
         empty_urls.append(topic_url)
         return  # even no post, empty topic
 
-    topic_post['pages'] = topic_pages
     topic_post['url'] = topic_url
 
     # set from topic
     topic_post['topic_id'] = topic_id
     topic_post['category_id'] = category_id
     topic_post['category_page'] = category_page
+
+    # check the replies
+    first_replies = topic.get_replies(topic_contents)
+    if first_replies is None or len(first_replies) < 1:
+        topic_post['replies'] = 0
+    else:
+        topic_post['replies'] = -1  # not sure
 
     # save to file
     # topic_file_name_prefix = str(category_id) + '-topic-' + str(category_page_index)
@@ -156,15 +163,16 @@ def retrieveTopicReplies(one_post, current_page):
 
     each_page_url = utils.get_viewtopic_uri(topic_id, current_page)
 
-    message_suffix = ' for ' + str(category_id) + '(' + str(category_page) + '),' + str(
+    message_suffix = ' for category' + str(category_id) + '(page:' + str(category_page) + '), topic ' + str(
         topic_id) + ' from ' + str(current_page) + ' page ' + each_page_url
     mongo_log('Starting to retrieve topic replies' + message_suffix)
 
-    each_page_replies = topic.get_replies(each_page_url)
+    topic_contents = topic.get_contents(each_page_url)
+    each_page_replies = topic.get_replies(topic_contents)
 
     if each_page_replies is None or len(each_page_replies) < 1:
         mongo_log("Can't find any replies" + message_suffix, status='error')
-        empty_urls.append(each_page_url)
+        no_replies_urls.append(each_page_url)
         return  # no any replies
 
     each_page_replies_num = len(each_page_replies)
@@ -175,7 +183,112 @@ def retrieveTopicReplies(one_post, current_page):
     # utils.save_to_file(result_folder + '/' + each_replies_out_file, each_page_replies)
 
     mongo.db.replies.insert(each_page_replies)
-    mongo_log('Finished to retrieve topic replies' + str(each_page_replies_num) + message_suffix)
+    mongo_log('Finished to retrieve topic replies ' + str(each_page_replies_num) + message_suffix)
+
+
+def doRetrieveTopicList():
+    # 1. Categories
+    retrieveCategories()
+
+    for s in mongo.db.summaries.find():
+        print 'Summaries: ' + str(s)
+    mongo_log('Categories: ' + str(mongo.db.categories.count()))  # 25
+
+    # 2. Topics list
+    for one_category in mongo.db.categories.find():
+        mongo_log(one_category)
+        retrieveTopicList(one_category)
+    mongo_log('TopicList: ' + str(mongo.db.topiclist.count()))  # 42025
+
+
+def doRetrieveTopics(post=True, reply=True):
+    # 3. retrieve all topics
+    for one_category in mongo.db.categories.find():
+        category_id = one_category['category_id']
+        category_pages = one_category['pages']
+
+        for category_page in range(1, category_pages + 1):
+            # no moved topic
+            found_topiclist = mongo.db.topiclist.find(
+                {'category_id': category_id, 'category_page': category_page, 'is_moved': 0})
+            if found_topiclist is None or found_topiclist.count() < 1:
+                mongo_log("Can't find any topic for category :" + str(category_id))
+                continue
+
+            for one_topic in found_topiclist:
+
+                # 3.1 all posts
+                if post:
+                    retrieveTopicPost(one_topic)
+
+                # 3.2 all replies, must be done 3.1 for posts
+                if reply:
+                    topic_id = one_topic['topic_id']
+                    found_posts = mongo.db.posts.find(
+                        {'topic_id': topic_id, 'has_replies': 1})
+                    if found_posts is None or found_posts.count() < 1:
+                        mongo_log("Can't find any replies for topic :" + str(topic_id))
+                        continue
+
+                    for one_post in found_posts:
+                        topic_pages = one_post['pages']
+
+                        for topic_page in range(1, topic_pages + 1):
+                            retrieveTopicReplies(one_post, topic_page)
+
+    # log
+    if post:
+        mongo_log('Posts: ' + str(mongo.db.posts.count()))
+    if reply:
+        mongo_log('Replies: ' + str(mongo.db.replies.count()))
+
+
+def out_array_data(filename, arrData, mongoSet):
+    if arrData:
+        out_data(result_folder + '/0-' + filename + '.json', mongoSet, {'urls': arrData},
+                 message='Existed ' + str(len(arrData)) + ' for ' + filename)
+
+
+def sum_categories():
+    result = {}
+
+    topic_num = 0
+    posts_num = 0
+    pages_num = 0
+    for one_category in mongo.db.categories.find():
+        topic_num += one_category['topics']
+        posts_num += one_category['posts']
+        pages_num += one_category['pages']
+
+    result['topics'] = topic_num
+    result['posts'] = posts_num
+    result['pages'] = pages_num
+
+    return result
+
+
+def sum_topicslist():
+    result = {}
+
+    replies_num = 0
+    views_num = 0
+
+    for one_category in mongo.db.categories.find():
+        category_id = one_category['category_id']
+        category_pages = one_category['pages']
+
+        for category_page in range(1, category_pages + 1):
+            # no moved topic
+            found_topiclist = mongo.db.topiclist.find(
+                {'category_id': category_id, 'category_page': category_page, 'is_moved': 0})
+            for one_topic in found_topiclist:
+                replies_num += one_topic['replies']
+                views_num += one_topic['views']
+
+    result['replies'] = replies_num
+    result['views'] = views_num
+
+    return result
 
 
 if __name__ == "__main__":
@@ -183,43 +296,36 @@ if __name__ == "__main__":
 
     try:
 
-        retrieveCategories()
+        doRetrieveTopicList()  # spent 26 min
+
+        doRetrieveTopics()  # spent 15 hours
+
+        print
         for s in mongo.db.summaries.find():
             print 'Summaries: ' + str(s)
-
-        for one_category in mongo.db.categories.find():
-            time.sleep(0.3)
-            # print(one_category)
-            retrieveTopicList(one_category)
         print 'Categories: ' + str(mongo.db.categories.count())
+        print 'TopicList: ' + str(mongo.db.topiclist.count())
+        print 'Posts: ' + str(mongo.db.posts.count())
+        print 'Replies: ' + str(mongo.db.replies.count())
 
-        # spent about 1.5 hours
+        categories_num = sum_categories()
+        print 'Sum from Categories: ' + str(categories_num)
 
-        # for one_topic in mongo.db.topiclist.find():
-        #     time.sleep(0.3)
-        #     # print one_topic
-        #     retrieveTopicPost(one_topic)
-        # print 'TopicList: ' + str(mongo.db.topiclist.count())
-        #
-        # # spent about 12 hours
-        #
-        # for one_post in mongo.db.posts.find():
-        #     pages = int(one_post['pages'])
-        #
-        #     for tp in range(1, pages + 1):
-        #         time.sleep(0.3)
-        #         retrieveTopicReplies(one_post, tp)
+        topicslist_num = sum_topicslist()
+        print 'Sum from TopicsList: ' + str(topicslist_num)
+        print
+
+        # for one_post in mongo.db.posts.find({'topic_id': 44962}):  #44962, 46615, 56861
+        #     print one_post
 
     except Exception, e:
         mongo_log(str(e), status='error')
         logger.exception(str(e), exc_info=True)
 
-    out_data(result_folder + '/0-redirect_urls.json', mongo.db.redirect, {'urls': redirect_urls},
-             message='Existed ' + str(len(redirect_urls)))
-    out_data(result_folder + '/0-empty_urls.json', mongo.db.empty, {'urls': empty_urls},
-             message='Existed ' + str(len(empty_urls)))
+    out_array_data('redirect_urls', redirect_urls, mongo.db.redirect)
+    out_array_data('no_replies_urls', no_replies_urls, mongo.db.noreplies)
+    out_array_data('empty_urls', empty_urls, mongo.db.empty)
 
-    #
     timeElapsed = datetime.now() - startTime
     mongo_log('Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))
     mongo_log("################END################")

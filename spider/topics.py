@@ -17,6 +17,8 @@ class TopicList:
         contents = self.__config.get_bs4request().get_contents(uri)
         category_id = utils.find_id(uri)
         category_page = utils.find_page(uri)
+        if category_page is None or category_page < 1:
+            category_page = 1
 
         # print (uri, category_id)
 
@@ -26,8 +28,7 @@ class TopicList:
         for tr in inbox_table.table.tbody.findAll('tr', class_=re.compile('^row(odd|even)$')):
             topic_result = {}
             topic_result['category_id'] = category_id
-            if category_page:
-                topic_result['category_page'] = category_page
+            topic_result['category_page'] = category_page
 
             results.append(topic_result)
 
@@ -63,7 +64,8 @@ class TopicList:
                 # print  tags
                 topic_result['tags'] = tags
 
-            # if moved, no data
+            # if not moved
+            topic_result['is_moved'] = ismoved
             if ismoved == 0:
                 # Replies & Views
                 replies_num = int(tdtc2.string.replace(',', ''))
@@ -80,11 +82,6 @@ class TopicList:
                 # print  (last_post_user, last_post_datetime)
                 topic_result['last_post_datetime'] = last_post_datetime
                 topic_result['last_post_user'] = last_post_user
-
-        # next page
-        # next_path = self.get_next_page(contents)
-        # if next_path:
-        #     self.get_list(next_path)
 
         return results
 
@@ -124,9 +121,21 @@ class Topic:
         if h_punviewtopic:
             h_firstpost = h_punviewtopic.find('div', class_='firstpost')
             if h_firstpost:
-                return self.get_post_results(h_firstpost)
+                post_result = self.get_post_results(h_firstpost)
+                if post_result:
+                    # get the total of topic pages
+                    pages = utils.get_pages(contents)
+                    post_result['pages'] = pages
 
-    def get_replies(self, contents):
+                    test_replies = self.get_replies(contents, test=True)
+                    if test_replies:
+                        post_result['has_replies'] = 1
+                    else:
+                        post_result['has_replies'] = 0
+
+                return post_result
+
+    def get_replies(self, contents, test=False):
         replies = []
         h_punviewtopic = contents.find('div', id='punviewtopic')
         if h_punviewtopic:
@@ -135,6 +144,8 @@ class Topic:
                 for h_each_blockpost in h_blockpost:
                     if 'firstpost' not in h_each_blockpost['class']:
                         replies.append(self.get_post_results(h_each_blockpost))
+                        if test:  # only need one replies
+                            break
         return replies
 
     def get_post_results(self, h_blockpost):

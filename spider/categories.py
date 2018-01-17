@@ -72,7 +72,7 @@ class Category:
                 subresult['title'] = sub_title
                 subresult['desc'] = sub_title_desc
                 subresult['path'] = sub_url
-                subresult['id'] = find_id(sub_url)
+                subresult['category_id'] = find_id(sub_url)
                 subresult['pages'] = pages
                 subresult['topics'] = topics_num
                 subresult['posts'] = posts_num

@@ -35,8 +35,8 @@ def find_page(uri):
     id = find_id(uri)
     if id and id > 0:  # must existed the id first
         found_data = re.findall(r"\?id=(\d+)\&p=(\d+)", uri)
-        if found_data and len(found_data) > 1:# existed the page
-            return int(found_data[1])
+        if found_data and len(found_data) > 0:  # matched
+            return int(found_data[0][1])
         else:
             return 1  # if not existed, will be 1 by default
 
@@ -101,3 +101,4 @@ def save_to_file(file, data):
 
     value = format_data(data)
     fo.write(value)
+
