@@ -249,6 +249,28 @@ def out_array_data(filename, arrData, mongoSet):
                  message='Existed ' + str(len(arrData)) + ' for ' + filename)
 
 
+def doRetrieveAll():
+    mongo_log("################START################")
+
+    try:
+
+        doRetrieveTopicList()  # spent 26 min
+
+        doRetrieveTopics()  # spent 15 hours
+
+    except Exception, e:
+        mongo_log(str(e), status='error')
+        logger.exception(str(e), exc_info=True)
+
+    out_array_data('redirect_urls', redirect_urls, mongo.db.redirect)
+    out_array_data('no_replies_urls', no_replies_urls, mongo.db.noreplies)
+    out_array_data('empty_urls', empty_urls, mongo.db.empty)
+
+    timeElapsed = datetime.now() - startTime
+    mongo_log('Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))
+    mongo_log("################END################")
+
+
 def sum_categories():
     result = {}
 
@@ -291,41 +313,32 @@ def sum_topicslist():
     return result
 
 
+def listResults():
+    print
+    for s in mongo.db.summaries.find():
+        print 'Summaries: ' + str(s)
+    print 'Categories: ' + str(mongo.db.categories.count())
+    print 'TopicList: ' + str(mongo.db.topiclist.count())
+    print 'Posts: ' + str(mongo.db.posts.count())
+    print 'Replies: ' + str(mongo.db.replies.count())
+
+    categories_num = sum_categories()
+    print 'Sum from Categories: ' + str(categories_num)
+
+    topicslist_num = sum_topicslist()
+    print 'Sum from TopicsList: ' + str(topicslist_num)
+
+    # for one_post in mongo.db.posts.find({'topic_id': 44962}):  # 44962, 46615, 56861
+    #     print one_post
+    # for one_post in mongo.db.posts.find({'topic_id': 46615}):  # 44962, 46615, 56861
+    #     print one_post
+    # for one_post in mongo.db.posts.find({'topic_id': 56861}):  # 44962, 46615, 56861
+    #     print one_post
+
+    print
+
+
 if __name__ == "__main__":
-    mongo_log("################START################")
+    doRetrieveAll() # spent 15 hours
 
-    try:
-
-        doRetrieveTopicList()  # spent 26 min
-
-        doRetrieveTopics()  # spent 15 hours
-
-        print
-        for s in mongo.db.summaries.find():
-            print 'Summaries: ' + str(s)
-        print 'Categories: ' + str(mongo.db.categories.count())
-        print 'TopicList: ' + str(mongo.db.topiclist.count())
-        print 'Posts: ' + str(mongo.db.posts.count())
-        print 'Replies: ' + str(mongo.db.replies.count())
-
-        categories_num = sum_categories()
-        print 'Sum from Categories: ' + str(categories_num)
-
-        topicslist_num = sum_topicslist()
-        print 'Sum from TopicsList: ' + str(topicslist_num)
-        print
-
-        # for one_post in mongo.db.posts.find({'topic_id': 44962}):  #44962, 46615, 56861
-        #     print one_post
-
-    except Exception, e:
-        mongo_log(str(e), status='error')
-        logger.exception(str(e), exc_info=True)
-
-    out_array_data('redirect_urls', redirect_urls, mongo.db.redirect)
-    out_array_data('no_replies_urls', no_replies_urls, mongo.db.noreplies)
-    out_array_data('empty_urls', empty_urls, mongo.db.empty)
-
-    timeElapsed = datetime.now() - startTime
-    mongo_log('Time elpased (hh:mm:ss.ms) {}'.format(timeElapsed))
-    mongo_log("################END################")
+    listResults()
